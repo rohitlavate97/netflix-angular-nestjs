@@ -111,4 +111,5 @@ npm run format
 - [x] **Phase 8: Angular UI Foundation** — Dark streaming shell, navbar with scroll transparency, search/notification popovers, profile switcher dropdown, footer, and core UI components.
 - [x] **Phase 9: Homepage Experience** — Dynamic hero banner, horizontal carousel rows, Top 10 rankings, continue-watching progress, and Quick Preview modal.
 - [x] **Phase 10: Content Details** — Movie details, series season/episode selector, deep metadata, cast/advisory tags, and recommendations.
-- [ ] ... _(Phases 11–27)_
+- [x] **Phase 11: Search** — Multi-entity search, debounced instant queries, entity & genre filters, relevance ranking, and Redis caching.
+- [ ] ... _(Phases 12–27)_

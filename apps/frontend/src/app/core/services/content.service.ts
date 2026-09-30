@@ -7,6 +7,11 @@ import {
   ContentCategoryRowDto,
   ContentFilterQuery,
   ContentStatus,
+  SearchQueryDto,
+  SearchResultsResponseDto,
+  SearchResultItemDto,
+  SearchEntityType,
+  SearchSortBy,
 } from '@netflix/shared-types';
 
 export const DEMO_MOVIES: MovieDto[] = [
@@ -463,26 +468,146 @@ export class ContentService {
     );
   }
 
-  search(query: string): Observable<{ movies: MovieDto[]; series: SeriesDto[] }> {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-      return of({ movies: [], series: [] });
+  search(query: SearchQueryDto | string): Observable<SearchResultsResponseDto> {
+    const queryObj: SearchQueryDto =
+      typeof query === 'string' ? { q: query } : query;
+    const rawTerm = (queryObj.q || '').trim();
+
+    if (!rawTerm) {
+      return of({
+        query: '',
+        items: [],
+        total: 0,
+        page: queryObj.page || 1,
+        limit: queryObj.limit || 20,
+        totalPages: 0,
+      });
     }
 
+    let params = new HttpParams().set('q', rawTerm);
+    if (queryObj.type) params = params.set('type', queryObj.type);
+    if (queryObj.genre) params = params.set('genre', queryObj.genre);
+    if (queryObj.ageRating) params = params.set('ageRating', queryObj.ageRating);
+    if (queryObj.sortBy) params = params.set('sortBy', queryObj.sortBy);
+    if (queryObj.page) params = params.set('page', queryObj.page.toString());
+    if (queryObj.limit) params = params.set('limit', queryObj.limit.toString());
+
     return this.http
-      .get<{ movies: MovieDto[]; series: SeriesDto[] }>(`${this.apiUrl}/search`, {
-        params: new HttpParams().set('q', q),
-      })
+      .get<SearchResultsResponseDto>(`${this.apiUrl}/search`, { params })
       .pipe(
         catchError(() => {
-          const matchedMovies = DEMO_MOVIES.filter(
-            (m) => m.title.toLowerCase().includes(q) || m.description.toLowerCase().includes(q)
-          );
-          const matchedSeries = DEMO_SERIES.filter(
-            (s) => s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
-          );
-          return of({ movies: matchedMovies, series: matchedSeries });
-        })
+          const lower = rawTerm.toLowerCase();
+          const type = queryObj.type || ('all' as SearchEntityType);
+          const genre = queryObj.genre || '';
+          const ageRating = queryObj.ageRating || '';
+          const sortBy = queryObj.sortBy || ('relevance' as SearchSortBy);
+          const page = queryObj.page || 1;
+          const limit = queryObj.limit || 20;
+
+          const items: SearchResultItemDto[] = [];
+
+          if (type === 'all' || type === 'movie') {
+            for (const m of DEMO_MOVIES) {
+              const matchesQuery =
+                m.title.toLowerCase().includes(lower) ||
+                m.description.toLowerCase().includes(lower) ||
+                m.genres.some((g) => g.name.toLowerCase().includes(lower));
+              const matchesGenre =
+                !genre ||
+                m.genres.some(
+                  (g) =>
+                    g.slug === genre ||
+                    g.name.toLowerCase() === genre.toLowerCase(),
+                );
+              const matchesAge = !ageRating || m.ageRating === ageRating;
+
+              if (matchesQuery && matchesGenre && matchesAge) {
+                items.push({
+                  id: m.id,
+                  title: m.title,
+                  slug: m.slug,
+                  description: m.description,
+                  type: 'movie',
+                  posterUrl: m.posterUrl,
+                  backdropUrl: m.backdropUrl,
+                  releaseDate: m.releaseDate,
+                  ageRating: m.ageRating,
+                  durationMinutes: m.durationMinutes,
+                  averageRating: m.averageRating,
+                  genres: m.genres,
+                });
+              }
+            }
+          }
+
+          if (type === 'all' || type === 'series') {
+            for (const s of DEMO_SERIES) {
+              const matchesQuery =
+                s.title.toLowerCase().includes(lower) ||
+                s.description.toLowerCase().includes(lower) ||
+                s.genres.some((g) => g.name.toLowerCase().includes(lower));
+              const matchesGenre =
+                !genre ||
+                s.genres.some(
+                  (g) =>
+                    g.slug === genre ||
+                    g.name.toLowerCase() === genre.toLowerCase(),
+                );
+              const matchesAge = !ageRating || s.ageRating === ageRating;
+
+              if (matchesQuery && matchesGenre && matchesAge) {
+                items.push({
+                  id: s.id,
+                  title: s.title,
+                  slug: s.slug,
+                  description: s.description,
+                  type: 'series',
+                  posterUrl: s.posterUrl,
+                  backdropUrl: s.backdropUrl,
+                  releaseDate: s.releaseDate,
+                  ageRating: s.ageRating,
+                  seasonsCount: s.seasons?.length || 0,
+                  averageRating: s.averageRating ?? 4.8,
+                  genres: s.genres,
+                });
+              }
+            }
+          }
+
+          items.sort((a, b) => {
+            if (sortBy === 'newest') {
+              return (
+                new Date(b.releaseDate).getTime() -
+                new Date(a.releaseDate).getTime()
+              );
+            }
+            if (sortBy === 'rating') {
+              return (b.averageRating ?? 0) - (a.averageRating ?? 0);
+            }
+            if (sortBy === 'title') {
+              return a.title.localeCompare(b.title);
+            }
+            // relevance
+            const aStarts = a.title.toLowerCase().startsWith(lower);
+            const bStarts = b.title.toLowerCase().startsWith(lower);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return (b.averageRating ?? 0) - (a.averageRating ?? 0);
+          });
+
+          const total = items.length;
+          const totalPages = Math.ceil(total / limit) || (total > 0 ? 1 : 0);
+          const paginated = items.slice((page - 1) * limit, page * limit);
+
+          return of({
+            query: rawTerm,
+            items: paginated,
+            total,
+            page,
+            limit,
+            totalPages,
+          });
+        }),
       );
   }
 }

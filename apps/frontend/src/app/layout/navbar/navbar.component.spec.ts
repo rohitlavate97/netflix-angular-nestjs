@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { NavbarComponent } from './navbar.component';
 import { ProfileService } from '../../core/services/profile.service';
@@ -60,5 +60,16 @@ describe('NavbarComponent', () => {
     spyOnProperty(window, 'scrollY', 'get').and.returnValue(50);
     component.onWindowScroll();
     expect(component.isScrolled()).toBeTrue();
+  });
+
+  it('should navigate to /search with q query param on executeSearch', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    component.searchQuery = 'matrix';
+    component.executeSearch();
+    expect(router.navigate).toHaveBeenCalledWith(['/search'], {
+      queryParams: { q: 'matrix' },
+    });
+    expect(component.isSearchOpen()).toBeFalse();
   });
 });

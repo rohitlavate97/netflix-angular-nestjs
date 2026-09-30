@@ -427,7 +427,7 @@ export class NavbarComponent {
 
   executeSearch(): void {
     if (this.searchQuery.trim()) {
-      this.router.navigate(['/movies'], { queryParams: { search: this.searchQuery.trim() } });
+      this.router.navigate(['/search'], { queryParams: { q: this.searchQuery.trim() } });
       this.isSearchOpen.set(false);
     }
   }

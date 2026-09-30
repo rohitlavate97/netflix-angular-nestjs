@@ -33,6 +33,11 @@ export const routes: Routes = [
       import('./features/details/content-details.component').then((m) => m.ContentDetailsComponent),
   },
   {
+    path: 'search',
+    loadComponent: () =>
+      import('./features/search/search.component').then((m) => m.SearchComponent),
+  },
+  {
     path: 'profiles',
     loadComponent: () =>
       import('./features/profiles/profiles.component').then((m) => m.ProfilesComponent),
