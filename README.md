@@ -108,5 +108,6 @@ npm run format
 - [x] **Phase 5: Authorization** — RBAC (User, Admin, Content Manager, Moderator), route guards, permission decorators.
 - [x] **Phase 6: Profiles** — Multi-profile CRUD (up to 5 profiles), kids mode maturity clamping, PIN protection, avatar presets, and profile selection.
 - [x] **Phase 7: Content Catalog** — Movies, series, seasons, episodes, genres, dynamic category feed rows, and catalog management.
-- [ ] **Phase 8: Angular UI Foundation** — App shell, responsive dark theme, navbar, footer, reusable content cards, loading & error UX states.
-- [ ] ... _(Phases 9–27)_
+- [x] **Phase 8: Angular UI Foundation** — App shell, responsive dark theme, sticky navbar, footer, reusable content cards, loading shimmer, empty & error UX states.
+- [ ] **Phase 9: Homepage Experience** — Dynamic hero banner, curated category rows, preview modal, personalized recommendations.
+- [ ] ... _(Phases 10–27)_
