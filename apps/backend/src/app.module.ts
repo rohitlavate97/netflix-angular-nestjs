@@ -7,6 +7,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { ContentModule } from './modules/content/content.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { HealthModule } from './modules/health/health.module';
     StorageModule,
     AuthModule,
     ProfilesModule,
+    ContentModule,
     HealthModule,
   ],
   controllers: [AppController],

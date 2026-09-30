@@ -107,5 +107,6 @@ npm run format
 - [x] **Phase 4: Authentication** — User registration, login, JWT access & refresh tokens, password hashing, token rotation, and auth guards.
 - [x] **Phase 5: Authorization** — RBAC (User, Admin, Content Manager, Moderator), route guards, permission decorators.
 - [x] **Phase 6: Profiles** — Multi-profile CRUD (up to 5 profiles), kids mode maturity clamping, PIN protection, avatar presets, and profile selection.
-- [ ] **Phase 7: Content Catalog** — Movies, series, seasons, episodes, genres, categories, and media asset management.
-- [ ] ... _(Phases 8–27)_
+- [x] **Phase 7: Content Catalog** — Movies, series, seasons, episodes, genres, dynamic category feed rows, and catalog management.
+- [ ] **Phase 8: Angular UI Foundation** — App shell, responsive dark theme, navbar, footer, reusable content cards, loading & error UX states.
+- [ ] ... _(Phases 9–27)_

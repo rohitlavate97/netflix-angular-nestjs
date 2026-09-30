@@ -16,6 +16,14 @@ export interface GenreDto {
   slug: string;
 }
 
+export interface CategoryDto {
+  id: string;
+  name: string;
+  slug: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
 export interface MediaAssetDto {
   id: string;
   masterPlaylistUrl: string;
@@ -34,9 +42,11 @@ export interface MovieDto {
   durationMinutes: number;
   ageRating: string;
   language: string;
+  country: string;
   posterUrl: string;
   backdropUrl: string;
   trailerUrl?: string;
+  cast?: string[];
   genres: GenreDto[];
   mediaAsset?: MediaAssetDto;
   status: ContentStatus;
@@ -49,7 +59,7 @@ export interface EpisodeDto {
   seasonId: string;
   episodeNumber: number;
   title: string;
-  description: string;
+  description?: string;
   durationMinutes: number;
   thumbnailUrl: string;
   mediaAsset?: MediaAssetDto;
@@ -60,7 +70,7 @@ export interface SeasonDto {
   seriesId: string;
   seasonNumber: number;
   title: string;
-  description: string;
+  description?: string;
   episodes: EpisodeDto[];
 }
 
@@ -75,7 +85,23 @@ export interface SeriesDto {
   posterUrl: string;
   backdropUrl: string;
   trailerUrl?: string;
+  cast?: string[];
   genres: GenreDto[];
   seasons: SeasonDto[];
   status: ContentStatus;
+}
+
+export interface ContentCategoryRowDto {
+  category: CategoryDto;
+  movies: MovieDto[];
+  series: SeriesDto[];
+}
+
+export interface ContentFilterQuery {
+  genre?: string;
+  ageRating?: string;
+  status?: ContentStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
