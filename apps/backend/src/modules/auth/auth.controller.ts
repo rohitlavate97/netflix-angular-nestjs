@@ -16,10 +16,21 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { Roles } from './decorators/roles.decorator';
+import { RequirePermissions } from './decorators/permissions.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ApiResponse, AuthResponse, AuthTokens, JwtPayload } from '@netflix/shared-types';
+import { RolesGuard } from './guards/roles.guard';
+import { PermissionsGuard } from './guards/permissions.guard';
+import {
+  ApiResponse,
+  AuthResponse,
+  AuthTokens,
+  JwtPayload,
+  UserRole,
+  UserPermission,
+} from '@netflix/shared-types';
 
-@ApiTags('Authentication')
+@ApiTags('Authentication & Authorization')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -109,6 +120,51 @@ export class AuthController {
       success: true,
       data,
       message: 'Current user retrieved successfully',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin-check')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify admin role authorization' })
+  @SwaggerResponse({ status: 200, description: 'Admin authorization confirmed' })
+  @SwaggerResponse({ status: 403, description: 'Forbidden: Insufficient role' })
+  adminCheck(@CurrentUser() user: JwtPayload): ApiResponse<{ authorized: boolean; role: UserRole }> {
+    return {
+      success: true,
+      data: { authorized: true, role: user.role },
+      message: 'Admin authorization verified',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CONTENT_MANAGER)
+  @Get('manager-check')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify content manager role authorization' })
+  @SwaggerResponse({ status: 200, description: 'Manager authorization confirmed' })
+  @SwaggerResponse({ status: 403, description: 'Forbidden: Insufficient role' })
+  managerCheck(@CurrentUser() user: JwtPayload): ApiResponse<{ authorized: boolean; role: UserRole }> {
+    return {
+      success: true,
+      data: { authorized: true, role: user.role },
+      message: 'Manager authorization verified',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(UserPermission.CONTENT_CREATE, UserPermission.MEDIA_UPLOAD)
+  @Get('permission-check')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify granular permissions authorization' })
+  @SwaggerResponse({ status: 200, description: 'Permissions authorization confirmed' })
+  @SwaggerResponse({ status: 403, description: 'Forbidden: Insufficient permissions' })
+  permissionCheck(@CurrentUser() user: JwtPayload): ApiResponse<{ authorized: boolean; role: UserRole }> {
+    return {
+      success: true,
+      data: { authorized: true, role: user.role },
+      message: 'Permissions authorization verified',
     };
   }
 }

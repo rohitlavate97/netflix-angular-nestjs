@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
@@ -11,6 +12,7 @@ import { UserRole } from '@netflix/shared-types';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  let jwtService: JwtService;
   let mockAuthService: {
     register: jest.Mock;
     login: jest.Mock;
@@ -93,6 +95,7 @@ describe('AuthController (e2e)', () => {
       .useValue(mockAuthService)
       .compile();
 
+    jwtService = moduleFixture.get<JwtService>(JwtService);
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
@@ -182,6 +185,128 @@ describe('AuthController (e2e)', () => {
           expect(res.body.success).toBe(true);
           expect(res.body.data.revoked).toBe(true);
         });
+    });
+  });
+
+  describe('Authorization & RBAC (e2e)', () => {
+    let userToken: string;
+    let adminToken: string;
+    let managerToken: string;
+
+    beforeAll(() => {
+      userToken = jwtService.sign({
+        sub: 'user-uuid',
+        email: 'user@streamflix.local',
+        role: UserRole.USER,
+      });
+      adminToken = jwtService.sign({
+        sub: 'admin-uuid',
+        email: 'admin@streamflix.local',
+        role: UserRole.ADMIN,
+      });
+      managerToken = jwtService.sign({
+        sub: 'mgr-uuid',
+        email: 'manager@streamflix.local',
+        role: UserRole.CONTENT_MANAGER,
+      });
+    });
+
+    describe('/api/v1/auth/me (GET)', () => {
+      it('should reject unauthenticated request with 401', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/me')
+          .expect(401);
+      });
+
+      it('should return authenticated user profile with valid Bearer token', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/me')
+          .set('Authorization', `Bearer ${userToken}`)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.id).toBe('e2e-user-id');
+          });
+      });
+    });
+
+    describe('/api/v1/auth/admin-check (GET)', () => {
+      it('should return 401 when token is missing', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/admin-check')
+          .expect(401);
+      });
+
+      it('should return 403 Forbidden when accessed by standard USER role', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/admin-check')
+          .set('Authorization', `Bearer ${userToken}`)
+          .expect(403);
+      });
+
+      it('should return 200 OK when accessed by ADMIN role', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/admin-check')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.authorized).toBe(true);
+            expect(res.body.data.role).toBe(UserRole.ADMIN);
+          });
+      });
+    });
+
+    describe('/api/v1/auth/manager-check (GET)', () => {
+      it('should return 403 Forbidden for USER role', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/manager-check')
+          .set('Authorization', `Bearer ${userToken}`)
+          .expect(403);
+      });
+
+      it('should return 200 OK for CONTENT_MANAGER role', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/manager-check')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.authorized).toBe(true);
+            expect(res.body.data.role).toBe(UserRole.CONTENT_MANAGER);
+          });
+      });
+
+      it('should return 200 OK for ADMIN role', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/manager-check')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.authorized).toBe(true);
+          });
+      });
+    });
+
+    describe('/api/v1/auth/permission-check (GET)', () => {
+      it('should return 403 Forbidden for USER role lacking permissions', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/permission-check')
+          .set('Authorization', `Bearer ${userToken}`)
+          .expect(403);
+      });
+
+      it('should return 200 OK for CONTENT_MANAGER with media upload & content create', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/auth/permission-check')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.authorized).toBe(true);
+          });
+      });
     });
   });
 });

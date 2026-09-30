@@ -36,8 +36,30 @@ export interface AuthResponse {
 
 export interface JwtPayload {
   sub: string;
+  id?: string;
   email: string;
   role: UserRole;
   iat?: number;
   exp?: number;
 }
+
+export const ROLE_PERMISSIONS: Record<UserRole, readonly UserPermission[]> = {
+  [UserRole.ADMIN]: Object.values(UserPermission),
+  [UserRole.CONTENT_MANAGER]: [
+    UserPermission.CONTENT_CREATE,
+    UserPermission.CONTENT_READ,
+    UserPermission.CONTENT_UPDATE,
+    UserPermission.CONTENT_DELETE,
+    UserPermission.MEDIA_UPLOAD,
+    UserPermission.MEDIA_DELETE,
+    UserPermission.ANALYTICS_READ,
+  ],
+  [UserRole.MODERATOR]: [
+    UserPermission.USER_READ,
+    UserPermission.CONTENT_READ,
+    UserPermission.ANALYTICS_READ,
+  ],
+  [UserRole.USER]: [
+    UserPermission.CONTENT_READ,
+  ],
+};

@@ -95,4 +95,24 @@ describe('AuthController', () => {
     expect(response.success).toBe(true);
     expect((response.data as { id: string }).id).toBe('u-1');
   });
+
+  it('should verify admin check', () => {
+    const response = controller.adminCheck({ sub: 'admin-1', email: 'admin@streamflix.local', role: UserRole.ADMIN });
+    expect(response.success).toBe(true);
+    expect(response.data?.authorized).toBe(true);
+    expect(response.data?.role).toBe(UserRole.ADMIN);
+  });
+
+  it('should verify manager check', () => {
+    const response = controller.managerCheck({ sub: 'mgr-1', email: 'mgr@streamflix.local', role: UserRole.CONTENT_MANAGER });
+    expect(response.success).toBe(true);
+    expect(response.data?.authorized).toBe(true);
+    expect(response.data?.role).toBe(UserRole.CONTENT_MANAGER);
+  });
+
+  it('should verify permission check', () => {
+    const response = controller.permissionCheck({ sub: 'mgr-1', email: 'mgr@streamflix.local', role: UserRole.CONTENT_MANAGER });
+    expect(response.success).toBe(true);
+    expect(response.data?.authorized).toBe(true);
+  });
 });
