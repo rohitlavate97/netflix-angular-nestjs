@@ -8,6 +8,7 @@ dist/
 dist-ssr/
 *.egg-info/
 .angular/
+*.tsbuildinfo
 
 # Testing and coverage
 coverage/

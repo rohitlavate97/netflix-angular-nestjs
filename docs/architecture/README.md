@@ -14,3 +14,4 @@ This platform is structured as an npm workspaces monorepo containing:
 - [ADR-001: Monorepo Architecture](adr/ADR-001-monorepo-structure.md)
 - [ADR-002: NestJS Modular Backend Architecture](adr/ADR-002-nestjs-backend-architecture.md)
 - [ADR-003: Angular Standalone Frontend Architecture](adr/ADR-003-angular-frontend-architecture.md)
+- [ADR-004: Core Infrastructure Layer](adr/ADR-004-infrastructure-layer.md)
