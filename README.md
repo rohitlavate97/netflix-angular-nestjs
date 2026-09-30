@@ -113,5 +113,7 @@ npm run format
 - [x] **Phase 10: Content Details** — Movie details, series season/episode selector, deep metadata, cast/advisory tags, and recommendations.
 - [x] **Phase 11: Search** — Multi-entity search, debounced instant queries, entity & genre filters, relevance ranking, and Redis caching.
 - [x] **Phase 12: Watchlist** — Profile queue management, composite unique constraints, optimistic Angular Signals updates, and My List view.
-- [ ] ... _(Phases 13–27)_
+- [x] **Phase 13: Watch History & Resume** — Throttled progress tracking, continue watching queue, Redis dual-tier caching, and Viewing Activity view.
+- [ ] ... _(Phases 14–27)_
+
 

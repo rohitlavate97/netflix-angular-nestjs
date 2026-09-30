@@ -87,4 +87,17 @@ describe('ContentRowComponent', () => {
     component.onDetails(mockMovies[0]);
     expect(component.openDetails.emit).toHaveBeenCalledWith(mockMovies[0]);
   });
+
+  it('should compute progress percentage from progressMap', () => {
+    component.progressMap = { 'row-1': 75 };
+    expect(component.getProgressPercentage('row-1', 0)).toBe(75);
+    expect(component.getProgressPercentage('row-unmapped', 0)).toBe(65);
+  });
+
+  it('should emit removeItem event when item is removed', () => {
+    spyOn(component.removeItem, 'emit');
+    component.onRemove('row-1');
+    expect(component.removeItem.emit).toHaveBeenCalledWith('row-1');
+  });
 });
+

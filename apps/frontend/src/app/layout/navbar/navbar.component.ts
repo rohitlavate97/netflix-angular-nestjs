@@ -257,6 +257,14 @@ import { UserProfileDto } from '@netflix/shared-types';
                   Manage Profiles
                 </a>
                 <a
+                  routerLink="/history"
+                  (click)="isProfileMenuOpen.set(false)"
+                  class="block px-2 py-1.5 rounded text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition-colors"
+                >
+                  Viewing Activity
+                </a>
+
+                <a
                   routerLink="/profiles"
                   (click)="isProfileMenuOpen.set(false)"
                   class="block px-2 py-1.5 rounded text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition-colors"

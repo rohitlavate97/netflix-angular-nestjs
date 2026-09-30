@@ -4,7 +4,10 @@ import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ContentDetailsComponent } from './content-details.component';
 import { ContentService } from '../../core/services/content.service';
+import { WatchHistoryService } from '../../core/services/watch-history.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { MovieDto, SeriesDto, SeasonDto, ContentStatus } from '@netflix/shared-types';
+
 
 describe('ContentDetailsComponent', () => {
   let component: ContentDetailsComponent;
@@ -83,6 +86,8 @@ describe('ContentDetailsComponent', () => {
     ],
   };
 
+  let watchHistoryService: WatchHistoryService;
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ContentDetailsComponent],
@@ -90,19 +95,32 @@ describe('ContentDetailsComponent', () => {
         provideHttpClient(),
         provideRouter([]),
         ContentService,
+        WatchHistoryService,
+        ProfileService,
       ],
     }).compileComponents();
 
     contentService = TestBed.inject(ContentService);
+    watchHistoryService = TestBed.inject(WatchHistoryService);
     router = TestBed.inject(Router);
 
     spyOn(contentService, 'getMovies').and.returnValue(
       of({ items: [mockMovie], total: 1, page: 1, limit: 10, totalPages: 1 })
     );
+    spyOn(watchHistoryService, 'getResumePlayback').and.returnValue(
+      of({
+        contentId: 'movie-10',
+        positionSeconds: 0,
+        durationSeconds: 7800,
+        progressPercentage: 0,
+        completed: false,
+      })
+    );
 
     fixture = TestBed.createComponent(ContentDetailsComponent);
     component = fixture.componentInstance;
   });
+
 
   it('should create the component', () => {
     expect(component).toBeTruthy();

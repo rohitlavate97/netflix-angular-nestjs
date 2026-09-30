@@ -5,12 +5,15 @@ import { of } from 'rxjs';
 import { HomeComponent } from './home.component';
 import { ContentService } from '../../core/services/content.service';
 import { ProfileService } from '../../core/services/profile.service';
+import { WatchHistoryService } from '../../core/services/watch-history.service';
+import { WatchlistService } from '../../core/services/watchlist.service';
 import { ContentCategoryRowDto, ContentStatus } from '@netflix/shared-types';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
   let contentService: ContentService;
+  let watchHistoryService: WatchHistoryService;
 
   const mockRows: ContentCategoryRowDto[] = [
     {
@@ -46,11 +49,15 @@ describe('HomeComponent', () => {
         provideRouter([]),
         ContentService,
         ProfileService,
+        WatchHistoryService,
+        WatchlistService,
       ],
     }).compileComponents();
 
     contentService = TestBed.inject(ContentService);
+    watchHistoryService = TestBed.inject(WatchHistoryService);
     spyOn(contentService, 'getHomeFeed').and.returnValue(of(mockRows));
+    spyOn(watchHistoryService, 'loadContinueWatching').and.returnValue(of([]));
 
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
@@ -83,5 +90,29 @@ describe('HomeComponent', () => {
     expect(component.watchlistedIds().has('m1')).toBeTrue();
     component.toggleWatchlist('m1');
     expect(component.watchlistedIds().has('m1')).toBeFalse();
+  });
+
+  it('should remove continue watching item when requested', () => {
+    const removeSpy = spyOn(watchHistoryService, 'removeFromHistory').and.returnValue(of(true));
+    watchHistoryService.continueWatchingList.set([
+      {
+        id: 'wh-1',
+        profileId: 'p-1',
+        contentId: 'm1',
+        title: 'Stellar Wind',
+        posterUrl: 'poster.jpg',
+        backdropUrl: 'backdrop.jpg',
+        isSeries: false,
+        positionSeconds: 300,
+        durationSeconds: 3600,
+        progressPercentage: 8.33,
+        remainingMinutes: 55,
+        completed: false,
+        lastWatchedAt: new Date().toISOString(),
+      },
+    ]);
+
+    component.removeContinueWatching('m1');
+    expect(removeSpy).toHaveBeenCalledWith('wh-1');
   });
 });

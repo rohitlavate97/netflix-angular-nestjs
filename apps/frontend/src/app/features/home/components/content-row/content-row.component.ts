@@ -98,19 +98,35 @@ import { MovieDto, SeriesDto } from '@netflix/shared-types';
                   (details)="onDetails(item)"
                 ></app-content-card>
 
-                <!-- Continue Watching Progress Bar -->
+                <!-- Continue Watching Progress Bar & Remaining Duration -->
                 @if (isProgressRow) {
-                  <div class="mt-1 w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
-                    <div
-                      class="bg-netflix-red h-full rounded-full"
-                      [style.width.%]="getProgressPercentage(item.id, idx)"
-                    ></div>
+                  <div class="mt-1 space-y-1">
+                    <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        class="bg-netflix-red h-full rounded-full transition-all duration-300"
+                        [style.width.%]="getProgressPercentage(item.id, idx)"
+                      ></div>
+                    </div>
+                    @if (getRemainingMinutes(item.id) > 0) {
+                      <div class="flex items-center justify-between text-[11px] text-zinc-400 font-medium px-0.5">
+                        <span>{{ getRemainingMinutes(item.id) }}m remaining</span>
+                        <button
+                          type="button"
+                          (click)="$event.stopPropagation(); onRemove(item.id)"
+                          title="Remove from Continue Watching"
+                          class="hover:text-white transition-colors opacity-70 hover:opacity-100"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               </div>
             }
           }
         </div>
+
 
         <!-- Right Slider Navigation Button -->
         @if (canScrollRight()) {
@@ -141,11 +157,14 @@ export class ContentRowComponent {
   @Input({ required: true }) items: Array<MovieDto | SeriesDto> = [];
   @Input() isTop10 = false;
   @Input() isProgressRow = false;
+  @Input() progressMap: Record<string, number> = {};
+  @Input() remainingMap: Record<string, number> = {};
   @Input() watchlistedIds: Set<string> = new Set();
 
   @Output() play = new EventEmitter<string>();
   @Output() toggleWatchlist = new EventEmitter<string>();
   @Output() openDetails = new EventEmitter<MovieDto | SeriesDto>();
+  @Output() removeItem = new EventEmitter<string>();
 
   @ViewChild('scrollContainer') scrollContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -197,10 +216,20 @@ export class ContentRowComponent {
     return this.watchlistedIds.has(id);
   }
 
-  getProgressPercentage(_id: string, idx: number): number {
-    // Generate realistic viewing progress values for continue watching demo
+  getProgressPercentage(id: string, idx: number): number {
+    if (this.progressMap && this.progressMap[id] !== undefined) {
+      return this.progressMap[id];
+    }
     const progressValues = [65, 30, 85, 45, 90, 20];
     return progressValues[idx % progressValues.length];
+  }
+
+  getRemainingMinutes(id: string): number {
+    return this.remainingMap?.[id] || 0;
+  }
+
+  onRemove(id: string): void {
+    this.removeItem.emit(id);
   }
 
   onPlay(id: string): void {
@@ -215,3 +244,4 @@ export class ContentRowComponent {
     this.openDetails.emit(item);
   }
 }
+

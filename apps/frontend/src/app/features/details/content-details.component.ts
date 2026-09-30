@@ -2,6 +2,8 @@ import { Component, Input, OnInit, inject, signal, computed } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ContentService } from '../../core/services/content.service';
+import { WatchHistoryService } from '../../core/services/watch-history.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { SeasonSelectorComponent } from './components/season-selector/season-selector.component';
 import { EpisodePickerComponent } from './components/episode-picker/episode-picker.component';
 import { CastListComponent } from './components/cast-list/cast-list.component';
@@ -9,7 +11,8 @@ import { ContentCardComponent, CardContentItem } from '../../shared/components/c
 import { LoadingSkeletonComponent } from '../../shared/components/loading-skeleton/loading-skeleton.component';
 import { ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { MovieDto, SeriesDto, SeasonDto, EpisodeDto } from '@netflix/shared-types';
+import { MovieDto, SeriesDto, SeasonDto, EpisodeDto, ResumePlaybackDto } from '@netflix/shared-types';
+
 
 @Component({
   selector: 'app-content-details',
@@ -98,7 +101,7 @@ import { MovieDto, SeriesDto, SeasonDto, EpisodeDto } from '@netflix/shared-type
 
             <!-- Quick Action Buttons -->
             <div class="flex items-center flex-wrap gap-3 pt-2">
-              <!-- Play Button -->
+              <!-- Play / Resume Button -->
               <button
                 type="button"
                 (click)="onPlay()"
@@ -107,8 +110,22 @@ import { MovieDto, SeriesDto, SeasonDto, EpisodeDto } from '@netflix/shared-type
                 <svg class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                <span class="text-base">Play</span>
+                <span class="text-base">{{ hasResume() ? 'Resume (' + remainingMinutes() + 'm left)' : 'Play' }}</span>
               </button>
+
+              @if (hasResume()) {
+                <button
+                  type="button"
+                  (click)="restartPlayback()"
+                  class="flex items-center space-x-1.5 bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 hover:text-white px-4 py-3 rounded font-semibold text-xs transition-colors border border-zinc-700 active:scale-95"
+                >
+                  <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Restart</span>
+                </button>
+              }
+
 
               <!-- Watchlist Toggle Button -->
               <button
@@ -165,8 +182,24 @@ import { MovieDto, SeriesDto, SeasonDto, EpisodeDto } from '@netflix/shared-type
                 </span>
               }
             </div>
+
+            <!-- Resume Progress Indicator -->
+            @if (hasResume()) {
+              <div class="max-w-md space-y-1.5 pt-1">
+                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    class="bg-netflix-red h-full rounded-full transition-all"
+                    [style.width.%]="resumeData()?.progressPercentage || 0"
+                  ></div>
+                </div>
+                <p class="text-[11px] text-zinc-400 font-medium">
+                  {{ Math.round(resumeData()?.progressPercentage || 0) }}% watched • {{ remainingMinutes() }} minutes remaining
+                </p>
+              </div>
+            }
           </div>
         </section>
+
 
         <!-- Main Body Content Section -->
         <section class="max-w-6xl mx-auto px-4 sm:px-8 py-10 space-y-12">
@@ -267,8 +300,11 @@ export class ContentDetailsComponent implements OnInit {
   @Input() id!: string;
 
   private readonly contentService = inject(ContentService);
+  private readonly watchHistoryService = inject(WatchHistoryService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
 
+  readonly Math = Math;
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
   readonly content = signal<MovieDto | SeriesDto | null>(null);
@@ -276,6 +312,19 @@ export class ContentDetailsComponent implements OnInit {
   readonly isWatchlisted = signal(false);
   readonly shareToast = signal(false);
   readonly similarTitles = signal<Array<MovieDto | SeriesDto>>([]);
+  readonly resumeData = signal<ResumePlaybackDto | null>(null);
+
+  readonly hasResume = computed(() => {
+    const r = this.resumeData();
+    return !!r && r.positionSeconds > 10 && !r.completed;
+  });
+
+  readonly remainingMinutes = computed(() => {
+    const r = this.resumeData();
+    if (!r) return 0;
+    return Math.max(0, Math.round((r.durationSeconds - r.positionSeconds) / 60));
+  });
+
 
   readonly isSeries = computed(() => {
     const c = this.content();
@@ -343,19 +392,31 @@ export class ContentDetailsComponent implements OnInit {
     this.contentService.getContentById(this.id).subscribe({
       next: (item) => {
         this.content.set(item);
-        if (item && 'seasons' in item) {
-          const s = item as SeriesDto;
-          if (s.seasons && s.seasons.length > 0) {
-            this.selectedSeason.set(s.seasons[0]);
+        if (item) {
+          if ('seasons' in item) {
+            const s = item as SeriesDto;
+            if (s.seasons && s.seasons.length > 0) {
+              this.selectedSeason.set(s.seasons[0]);
+            }
           }
+          this.loadSimilar();
+          this.loadResumePosition(item);
         }
-        this.loadSimilar();
         this.isLoading.set(false);
+
       },
       error: () => {
         this.hasError.set(true);
         this.isLoading.set(false);
       },
+    });
+  }
+
+  private loadResumePosition(item: MovieDto | SeriesDto): void {
+    const profileId = this.profileService.currentProfile()?.id || 'demo-profile-1';
+    const isSeries = 'seasons' in item;
+    this.watchHistoryService.getResumePlayback(profileId, item.id, isSeries).subscribe({
+      next: (res) => this.resumeData.set(res),
     });
   }
 
@@ -388,9 +449,25 @@ export class ContentDetailsComponent implements OnInit {
   onPlay(): void {
     const c = this.content();
     if (c) {
-      this.router.navigate(['/watch', c.id]);
+      if (this.hasResume()) {
+        this.router.navigate(['/watch', c.id], {
+          queryParams: { t: this.resumeData()?.positionSeconds },
+        });
+      } else {
+        this.router.navigate(['/watch', c.id]);
+      }
     }
   }
+
+  restartPlayback(): void {
+    const c = this.content();
+    if (c) {
+      this.router.navigate(['/watch', c.id], {
+        queryParams: { t: 0 },
+      });
+    }
+  }
+
 
   onPlayEpisode(episode: EpisodeDto): void {
     const c = this.content();

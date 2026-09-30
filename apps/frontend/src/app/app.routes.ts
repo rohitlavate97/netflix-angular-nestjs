@@ -43,6 +43,12 @@ export const routes: Routes = [
       import('./features/profiles/profiles.component').then((m) => m.ProfilesComponent),
   },
   {
+    path: 'history',
+    loadComponent: () =>
+      import('./features/history/watch-history.component').then((m) => m.WatchHistoryComponent),
+  },
+
+  {
     path: '**',
     redirectTo: '',
   },

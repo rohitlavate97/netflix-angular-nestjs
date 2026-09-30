@@ -11,6 +11,7 @@ import { ContentModule } from './modules/content/content.module';
 import { HealthModule } from './modules/health/health.module';
 import { SearchModule } from './modules/search/search.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
+import { WatchHistoryModule } from './modules/watch-history/watch-history.module';
 
 @Module({
   imports: [
@@ -27,7 +28,9 @@ import { WatchlistModule } from './modules/watchlist/watchlist.module';
     HealthModule,
     SearchModule,
     WatchlistModule,
+    WatchHistoryModule,
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })
