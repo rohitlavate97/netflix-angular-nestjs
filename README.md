@@ -106,5 +106,6 @@ npm run format
 - [x] **Phase 3: Database** — Core schema entities, relationships, composite indexes, migrations, and idempotent seed data.
 - [x] **Phase 4: Authentication** — User registration, login, JWT access & refresh tokens, password hashing, token rotation, and auth guards.
 - [x] **Phase 5: Authorization** — RBAC (User, Admin, Content Manager, Moderator), route guards, permission decorators.
-- [ ] **Phase 6: Profiles** — Multi-profile CRUD, kids mode, PIN protection, avatar selection.
-- [ ] ... _(Phases 7–27)_
+- [x] **Phase 6: Profiles** — Multi-profile CRUD (up to 5 profiles), kids mode maturity clamping, PIN protection, avatar presets, and profile selection.
+- [ ] **Phase 7: Content Catalog** — Movies, series, seasons, episodes, genres, categories, and media asset management.
+- [ ] ... _(Phases 8–27)_
