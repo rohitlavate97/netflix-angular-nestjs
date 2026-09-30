@@ -19,6 +19,8 @@ describe('AppController (e2e)', () => {
         isInitialized: true,
         query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
         destroy: jest.fn().mockResolvedValue(undefined),
+        entityMetadatas: [],
+        options: { type: 'postgres' },
         getRepository: jest.fn().mockReturnValue({
           find: jest.fn().mockResolvedValue([]),
           findOne: jest.fn().mockResolvedValue(null),

@@ -15,7 +15,8 @@
     "baseUrl": "./",
     "paths": {
       "@netflix/shared-types": ["../../packages/shared-types/dist/index.d.ts"]
-    }
+    },
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"]
 }

@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { HealthModule } from './modules/health/health.module';
     DatabaseModule,
     RedisModule,
     StorageModule,
+    AuthModule,
     HealthModule,
   ],
   controllers: [AppController],
