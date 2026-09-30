@@ -2,6 +2,8 @@ import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseService } from './database.service';
+import { SeedService } from '../../database/seeds/seed.service';
+import * as entities from '../../database/entities';
 
 @Global()
 @Module({
@@ -16,7 +18,7 @@ import { DatabaseService } from './database.service';
         username: configService.get<string>('DATABASE_USER', 'netflix_user'),
         password: configService.get<string>('DATABASE_PASSWORD', 'netflix_password'),
         database: configService.get<string>('DATABASE_NAME', 'netflix_db'),
-        autoLoadEntities: true,
+        entities: Object.values(entities),
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
         logging: configService.get<string>('NODE_ENV') === 'development',
         retryAttempts: 2,
@@ -28,7 +30,7 @@ import { DatabaseService } from './database.service';
       }),
     }),
   ],
-  providers: [DatabaseService],
-  exports: [DatabaseService, TypeOrmModule],
+  providers: [DatabaseService, SeedService],
+  exports: [DatabaseService, SeedService, TypeOrmModule],
 })
 export class DatabaseModule {}

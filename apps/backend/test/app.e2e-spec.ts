@@ -19,6 +19,12 @@ describe('AppController (e2e)', () => {
         isInitialized: true,
         query: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
         destroy: jest.fn().mockResolvedValue(undefined),
+        getRepository: jest.fn().mockReturnValue({
+          find: jest.fn().mockResolvedValue([]),
+          findOne: jest.fn().mockResolvedValue(null),
+          create: jest.fn().mockImplementation((d) => d),
+          save: jest.fn().mockImplementation((d) => Promise.resolve(d)),
+        }),
       })
       .overrideProvider(DatabaseService)
       .useValue({

@@ -103,7 +103,7 @@ npm run format
 
 - [x] **Phase 1: Project Foundation** — Monorepo, NestJS application, Angular application, shared types, Docker compose, tooling, initial documentation.
 - [x] **Phase 2: Infrastructure** — PostgreSQL (TypeORM), Redis (ioredis), MinIO (S3 SDK), Docker Compose, and health diagnostics.
-- [ ] **Phase 3: Database** — Core schema entities, relations, migrations, seed data.
+- [x] **Phase 3: Database** — Core schema entities, relationships, composite indexes, migrations, and idempotent seed data.
 - [ ] **Phase 4: Authentication** — User registration, login, JWT access & refresh tokens, password hashing.
 - [ ] **Phase 5: Authorization** — RBAC (User, Admin, Content Manager), route guards, permission decorators.
 - [ ] ... _(Phases 6–27)_

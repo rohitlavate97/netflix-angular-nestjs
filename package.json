@@ -23,6 +23,7 @@
     "format:check": "prettier --check \"**/*.{ts,js,json,md,scss,html}\"",
     "start:backend": "npm run start:dev --workspace=@netflix/backend",
     "start:frontend": "npm run start --workspace=@netflix/frontend",
+    "db:seed": "npm run seed --workspace=@netflix/backend",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
