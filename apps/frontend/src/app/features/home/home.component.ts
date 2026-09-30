@@ -1,8 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ContentService } from '../../core/services/content.service';
-import { ContentCardComponent, CardContentItem } from '../../shared/components/content-card/content-card.component';
+import { ProfileService } from '../../core/services/profile.service';
+import { HeroBannerComponent } from './components/hero-banner/hero-banner.component';
+import { ContentRowComponent } from './components/content-row/content-row.component';
+import { ContentModalComponent } from './components/content-modal/content-modal.component';
 import { LoadingSkeletonComponent } from '../../shared/components/loading-skeleton/loading-skeleton.component';
 import { ErrorStateComponent } from '../../shared/components/error-state/error-state.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
@@ -13,14 +16,16 @@ import { ContentCategoryRowDto, MovieDto, SeriesDto } from '@netflix/shared-type
   standalone: true,
   imports: [
     CommonModule,
-    ContentCardComponent,
+    HeroBannerComponent,
+    ContentRowComponent,
+    ContentModalComponent,
     LoadingSkeletonComponent,
     ErrorStateComponent,
     EmptyStateComponent,
   ],
   template: `
-    <main class="min-h-screen text-white">
-      <!-- Loading State for Hero & Rows -->
+    <main class="min-h-screen text-white bg-[#141414] overflow-x-hidden">
+      <!-- Loading State: Banner + Row Skeletons -->
       @if (isLoading()) {
         <app-loading-skeleton type="banner"></app-loading-skeleton>
         <app-loading-skeleton type="row" [count]="6"></app-loading-skeleton>
@@ -29,130 +34,94 @@ import { ContentCategoryRowDto, MovieDto, SeriesDto } from '@netflix/shared-type
         <!-- Error State with Retry -->
         <app-error-state
           title="Could not load homepage feed"
-          message="We were unable to load the catalog rows. Please verify your connection."
+          message="We were unable to connect to the catalog feed. Please verify your connection."
           (retry)="loadFeed()"
         ></app-error-state>
       } @else {
-        <!-- Hero Banner Section -->
-        @if (heroMovie()) {
-          <section
-            class="relative w-full h-[70vh] md:h-[85vh] flex items-center bg-cover bg-center overflow-hidden"
-          >
-            <!-- Background Image -->
-            <div class="absolute inset-0">
-              <img
-                [src]="heroMovie()?.backdropUrl"
-                [alt]="heroMovie()?.title"
-                class="w-full h-full object-cover object-center"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent"
-              ></div>
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/40"
-              ></div>
-            </div>
-
-            <!-- Hero Text Content -->
-            <div class="relative z-20 max-w-2xl px-6 md:px-16 space-y-4 pt-16">
-              <div
-                class="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-red-400 border border-white/10"
-              >
-                <span>🔥 #1 in Movies Today</span>
-              </div>
-
-              <h1 class="text-3xl md:text-6xl font-black tracking-tight drop-shadow-lg uppercase">
-                {{ heroMovie()?.title }}
-              </h1>
-
-              <p class="text-sm md:text-base text-zinc-300 line-clamp-3 leading-relaxed drop-shadow-md">
-                {{ heroMovie()?.description }}
-              </p>
-
-              <!-- Hero Actions -->
-              <div class="flex items-center space-x-4 pt-2">
-                <button
-                  type="button"
-                  (click)="playMedia(heroMovie()!.id)"
-                  class="flex items-center space-x-2 bg-white text-black px-6 py-2.5 rounded font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
-                >
-                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                  <span>Play</span>
-                </button>
-
-                <button
-                  type="button"
-                  (click)="openDetails(heroMovie()!.id)"
-                  class="flex items-center space-x-2 bg-zinc-600/70 text-white px-6 py-2.5 rounded font-bold hover:bg-zinc-600/50 transition-colors backdrop-blur-sm active:scale-95"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>More Info</span>
-                </button>
-              </div>
-            </div>
-          </section>
+        <!-- Dynamic Hero Banner -->
+        @if (heroContent()) {
+          <app-hero-banner
+            [content]="heroContent()"
+            [isSeries]="isHeroSeries()"
+            (play)="playMedia($event)"
+            (moreInfo)="openDetailsModal($event)"
+          ></app-hero-banner>
         }
 
-        <!-- Dynamic Content Rows -->
-        <section class="relative z-20 -mt-16 md:-mt-28 px-4 md:px-12 space-y-10 pb-16">
-          @for (row of categoryRows(); track row.category.id) {
-            <div>
-              <h2 class="text-lg md:text-xl font-bold mb-3 text-zinc-100 flex items-center space-x-2">
-                <span>{{ row.category.name }}</span>
-              </h2>
+        <!-- Horizontal Netflix Content Rows -->
+        <div class="relative z-20 -mt-16 sm:-mt-24 md:-mt-32 space-y-6 md:space-y-10 pb-20">
+          <!-- Continue Watching Row (Personalized for active profile) -->
+          @if (continueWatchingList().length > 0) {
+            <app-content-row
+              [title]="'Continue Watching for ' + profileName()"
+              [items]="continueWatchingList()"
+              [isProgressRow]="true"
+              [watchlistedIds]="watchlistedIds()"
+              (play)="playMedia($event)"
+              (toggleWatchlist)="toggleWatchlist($event)"
+              (openDetails)="openDetailsModal($event)"
+            ></app-content-row>
+          }
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                @for (item of row.movies; track item.id) {
-                  <app-content-card
-                    [content]="asCardItem(item)"
-                    aspectRatio="backdrop"
-                    [isWatchlisted]="isItemWatchlisted(item.id)"
-                    (play)="playMedia(item.id)"
-                    (toggleWatchlist)="toggleWatchlist(item.id)"
-                    (details)="openDetails(item.id)"
-                  ></app-content-card>
-                }
-                @for (s of row.series; track s.id) {
-                  <app-content-card
-                    [content]="asCardItem(s, true)"
-                    aspectRatio="backdrop"
-                    [isWatchlisted]="isItemWatchlisted(s.id)"
-                    (play)="playMedia(s.id)"
-                    (toggleWatchlist)="toggleWatchlist(s.id)"
-                    (details)="openDetails(s.id)"
-                  ></app-content-card>
-                }
-              </div>
-            </div>
+          <!-- Curated Category Feed Rows -->
+          @for (row of categoryRows(); track row.category.id) {
+            <app-content-row
+              [title]="row.category.name"
+              [items]="getRowItems(row)"
+              [isTop10]="row.category.slug === 'top-10'"
+              [watchlistedIds]="watchlistedIds()"
+              (play)="playMedia($event)"
+              (toggleWatchlist)="toggleWatchlist($event)"
+              (openDetails)="openDetailsModal($event)"
+            ></app-content-row>
           } @empty {
             <app-empty-state
               title="No content available"
               description="Check back soon as new movies and series are added to StreamFlix."
             ></app-empty-state>
           }
-        </section>
+        </div>
+
+        <!-- Quick Preview Modal -->
+        <app-content-modal
+          [isOpen]="isModalOpen()"
+          [content]="selectedModalContent()"
+          [isWatchlisted]="isModalContentWatchlisted()"
+          [recommendedItems]="recommendedItems()"
+          (close)="closeModal()"
+          (play)="playMedia($event)"
+          (toggleWatchlist)="toggleWatchlist($event)"
+          (changeContent)="openDetailsModal($event)"
+        ></app-content-modal>
       }
     </main>
   `,
 })
 export class HomeComponent implements OnInit {
   private readonly contentService = inject(ContentService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
 
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
   readonly categoryRows = signal<ContentCategoryRowDto[]>([]);
-  readonly heroMovie = signal<MovieDto | null>(null);
-  readonly watchlistedIds = signal<Set<string>>(new Set());
+  readonly heroContent = signal<MovieDto | SeriesDto | null>(null);
+  readonly continueWatchingList = signal<Array<MovieDto | SeriesDto>>([]);
+  readonly watchlistedIds = signal<Set<string>>(new Set(['movie-1', 'series-1']));
+  readonly selectedModalContent = signal<MovieDto | SeriesDto | null>(null);
+
+  readonly isModalOpen = computed(() => !!this.selectedModalContent());
+  readonly isHeroSeries = computed(
+    () => !!this.heroContent() && 'seasons' in (this.heroContent() as object)
+  );
+  readonly profileName = computed(() => this.profileService.currentProfile()?.name || 'You');
+  readonly recommendedItems = computed(() => {
+    const all: Array<MovieDto | SeriesDto> = [];
+    for (const row of this.categoryRows()) {
+      all.push(...row.movies, ...row.series);
+    }
+    return all.filter((item) => item.id !== this.selectedModalContent()?.id);
+  });
 
   ngOnInit(): void {
     this.loadFeed();
@@ -165,8 +134,22 @@ export class HomeComponent implements OnInit {
     this.contentService.getHomeFeed().subscribe({
       next: (rows) => {
         this.categoryRows.set(rows);
-        if (rows.length > 0 && rows[0].movies.length > 0) {
-          this.heroMovie.set(rows[0].movies[0]);
+        if (rows.length > 0) {
+          // Select featured hero from the first category
+          const firstRow = rows[0];
+          if (firstRow.movies.length > 0) {
+            this.heroContent.set(firstRow.movies[0]);
+          } else if (firstRow.series.length > 0) {
+            this.heroContent.set(firstRow.series[0]);
+          }
+
+          // Populate realistic continue watching queue
+          if (rows.length >= 2) {
+            this.continueWatchingList.set([
+              ...rows[0].movies.slice(1, 3),
+              ...rows[1].movies.slice(0, 2),
+            ]);
+          }
         }
         this.isLoading.set(false);
       },
@@ -177,26 +160,13 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  asCardItem(item: MovieDto | SeriesDto, isSeries = false): CardContentItem {
-    const movie = !isSeries ? (item as MovieDto) : undefined;
-    const series = isSeries ? (item as SeriesDto) : undefined;
-    return {
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      posterUrl: item.posterUrl,
-      backdropUrl: item.backdropUrl,
-      ageRating: item.ageRating,
-      durationMinutes: movie?.durationMinutes,
-      seasonsCount: series?.seasons?.length,
-      averageRating: movie?.averageRating ?? 4.8,
-      genres: item.genres,
-      isSeries,
-    };
+  getRowItems(row: ContentCategoryRowDto): Array<MovieDto | SeriesDto> {
+    return [...row.movies, ...row.series];
   }
 
-  isItemWatchlisted(id: string): boolean {
-    return this.watchlistedIds().has(id);
+  isModalContentWatchlisted(): boolean {
+    const current = this.selectedModalContent();
+    return !!current && this.watchlistedIds().has(current.id);
   }
 
   toggleWatchlist(id: string): void {
@@ -211,12 +181,15 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  playMedia(id: string): void {
-    this.router.navigate(['/watch', id]);
+  openDetailsModal(content: MovieDto | SeriesDto): void {
+    this.selectedModalContent.set(content);
   }
 
-  openDetails(id: string): void {
-    // In Phase 10 this will open the content details modal
-    console.log('Open details for:', id);
+  closeModal(): void {
+    this.selectedModalContent.set(null);
+  }
+
+  playMedia(id: string): void {
+    this.router.navigate(['/watch', id]);
   }
 }
