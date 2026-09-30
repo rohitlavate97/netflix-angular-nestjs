@@ -1,0 +1,16 @@
+{
+  "name": "@netflix/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript interfaces, types, and enums for Netflix clone",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "rimraf": "^6.0.1"
+  }
+}

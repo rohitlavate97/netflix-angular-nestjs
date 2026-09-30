@@ -1,0 +1,39 @@
+{
+  "name": "netflix-streaming-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Ready Netflix-inspired Full-Stack Streaming Platform with Angular & NestJS",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "build:shared": "npm run build --workspace=@netflix/shared-types",
+    "build:backend": "npm run build --workspace=@netflix/backend",
+    "build:frontend": "npm run build --workspace=@netflix/frontend",
+    "test": "npm run test:backend",
+    "test:all": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test --workspace=@netflix/backend",
+    "test:backend:e2e": "npm run test:e2e --workspace=@netflix/backend",
+    "test:frontend": "npm run test --workspace=@netflix/frontend",
+    "lint": "eslint \"apps/**/*.ts\" \"packages/**/*.ts\"",
+    "lint:fix": "eslint \"apps/**/*.ts\" \"packages/**/*.ts\" --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md,scss,html}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md,scss,html}\"",
+    "start:backend": "npm run start:dev --workspace=@netflix/backend",
+    "start:frontend": "npm run start --workspace=@netflix/frontend",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.5.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
+  }
+}
