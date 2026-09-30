@@ -89,6 +89,7 @@ export interface SeriesDto {
   genres: GenreDto[];
   seasons: SeasonDto[];
   status: ContentStatus;
+  averageRating?: number;
 }
 
 export interface ContentCategoryRowDto {

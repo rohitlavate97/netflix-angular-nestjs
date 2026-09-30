@@ -427,8 +427,38 @@ export class ContentService {
   getSeriesById(id: string): Observable<SeriesDto | null> {
     return this.http.get<SeriesDto>(`${this.apiUrl}/series/${id}`).pipe(
       catchError(() => {
-        const series = DEMO_SERIES.find((s) => s.id === id) ?? DEMO_SERIES[0];
+        const series = DEMO_SERIES.find((s) => s.id === id || s.slug === id) ?? DEMO_SERIES[0];
         return of(series);
+      })
+    );
+  }
+
+  getContentById(identifier: string): Observable<MovieDto | SeriesDto | null> {
+    const seriesMatch = DEMO_SERIES.find(
+      (s) => s.id === identifier || s.slug === identifier
+    );
+    if (seriesMatch) {
+      return this.getSeriesById(identifier);
+    }
+
+    const movieMatch = DEMO_MOVIES.find(
+      (m) => m.id === identifier || m.slug === identifier
+    );
+    if (movieMatch) {
+      return this.getMovieById(identifier);
+    }
+
+    return this.http.get<MovieDto>(`${this.apiUrl}/movies/${identifier}`).pipe(
+      catchError(() => {
+        return this.http.get<SeriesDto>(`${this.apiUrl}/series/${identifier}`).pipe(
+          catchError(() => {
+            const fallback =
+              DEMO_MOVIES.find((m) => m.id === identifier || m.slug === identifier) ||
+              DEMO_SERIES.find((s) => s.id === identifier || s.slug === identifier) ||
+              DEMO_MOVIES[0];
+            return of(fallback);
+          })
+        );
       })
     );
   }
