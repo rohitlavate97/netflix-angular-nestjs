@@ -10,6 +10,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ContentModule } from './modules/content/content.module';
 import { HealthModule } from './modules/health/health.module';
 import { SearchModule } from './modules/search/search.module';
+import { WatchlistModule } from './modules/watchlist/watchlist.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SearchModule } from './modules/search/search.module';
     ContentModule,
     HealthModule,
     SearchModule,
+    WatchlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
